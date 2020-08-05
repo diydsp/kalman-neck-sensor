@@ -1,28 +1,30 @@
 
+import random as rand
+import math as math
 
-cdef float Fs       = 1000.0f  # samp freq in Hz
-cdef float neck_var = 0.1f   # variance of noise
+cdef float Fs         = 1000.0  # samp freq in Hz
+cdef float neck_var   = 0.1   # variance of noise
 
-cdef float pos        = 0.0f # kinetics
-cdef float pos_noise  = 0.0f
-cdef float vel        = 0.0f
-cdef float acc        = 0.0f
+cdef float pos        = 0.0 # kinetics
+cdef float pos_noise  = 0.0
+cdef float vel        = 0.0
+cdef float acc        = 0.0
 
-cdef float pos1       = 0.0f # prev step
-cdef float pos_noise1 = 0.0f 
-cdef float vel1       = 0.0f
+cdef float pos1       = 0.0 # prev step
+cdef float pos_noise1 = 0.0 
+cdef float vel1       = 0.0
 
-cdef float dpos       = 0.0f # derivatives
-cdef float dpos_noise = 0.0f
-cdef float dvel       = 0.0f
+cdef float dpos       = 0.0 # derivatives
+cdef float dpos_noise = 0.0
+cdef float dvel       = 0.0
 
-cdef float noise      = 0.0f
+cdef float noise      = 0.0
 
 cdef float noise_mag = 1 * 2000
 
 def out_row():
-{
-    noise = ( ( random()%(int32_t)noise_mag ) - noise_mag / 2.0f )/ noise_mag / 2.0f
+    #noise = rand.uniform( -noise_mag/2.0, noise_mag / 2.0 )
+    noise = 0.5;
     pos_noise = pos + noise
 
     dpos = pos - pos1
@@ -31,60 +33,57 @@ def out_row():
     dvel = vel - vel1
     acc = dvel * Fs
 
-    print(f'{pos: 3.4f}, ', endl="" )
-    print(f'{pos_noise: 3.4f, ', endl="")
-    print(f'{dpos_noise: 3.4f, ', endl="" )
-    print(f'{vel: 4.4f, ', endl="" )
-    print(f'{dvel: 4.4f, ', endl="" )
-    print(f'{acc: 4.4f, ', endl="" )
+    print(f'{pos: 3.4f}, ', end='' )
+    print(f'{pos_noise: 3.4f}, ', end='')
+    print(f'{dpos_noise: 3.4f}, ', end="" )
+    print(f'{vel: 4.4f}, ', end="" )
+    print(f'{dvel: 4.4f}, ', end="" )
+    print(f'{acc: 4.4f}, ', end="" )
     print(f'\n' )
     
     # prep for next iter
     pos1       = pos
     pos_noise1 = pos_noise
     vel1 = vel
-}
 
-def out_samps( cdef float samp_len ):
-{
+def out_samps( float samp_len ):
+
     cdef int32_t step
     cdef int32_t steps = Fs * samp_len
     cdef float noise
-  
+
     for step in range( 0, steps):
-    acc = 0
-    vel = 0
-    out_row()
-}
+        acc = 0
+        vel = 0
+        out_row()
+
 
 # e.g. freq of 5 Hz means period is 0.2s,
 # so half that to move from cos( 0 ) to cos( pi ) is 0.1s
-def move_to( cdef float target, cdef float freq ):
-{
-    cdef float   samp_len      = 1.0f / freq / 2.0f
+def move_to( target, freq ):
+    cdef float   samp_len      = 1.0 / freq / 2.0
     cdef int32_t step
     cdef int32_t steps   = Fs * samp_len
-    cdef float   phase         = 0.0f
-    cdef float   phase_delta   = M_PI / (float) steps
-    cdef float   offset        = 0.0f
+    cdef float   phase         = 0.0
+    cdef float   phase_delta   = M_PI / steps
+    cdef float   offset        = 0.0
     cdef float   gap           = target - pos
     cdef float   noise
     cdef float   start_point   = pos
   
     for step in range( 0, steps ):
-    offset  = gap * ( 0.5f - 0.5f * cos( phase ) )
-    pos     = start_point + offset
-    out_row()
-    
-    phase  += phase_delta
+        offset  = gap * ( 0.5 - 0.5 * math.cos( phase ) )
+        pos     = start_point + offset
+        out_row()
+        phase  += phase_delta
 
     pos = target
-}
+
 
 pos = 0
-out_samps( 0.1f )
+out_samps( 0.1 )
 
 move_to( 100.0, 5 ) # move M mm, at N Hz
 
-out_samps( 0.1f )
+out_samps( 0.1 )
 
